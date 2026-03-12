@@ -86,15 +86,21 @@ export async function executeSubAgent(
       throw new Error("Model or LLM API not available");
     }
 
-    // allow all tools for now
-    // todo: eventually we want to show the same prompt in a dialog whether asking whether that tool call is allowed or not
+    // Inherit tool permissions from the main agent, but convert "ask" to "exclude"
+    // since subagents cannot ask for permission
+    const subAgentPolicies = mainAgentPermissionsState.permissions.policies.map(
+      (policy) => ({
+        ...policy,
+        permission: policy.permission === "ask" ? "exclude" : policy.permission,
+      }),
+    );
 
     serviceContainer.set<ToolPermissionServiceState>(
       SERVICE_NAMES.TOOL_PERMISSIONS,
       {
         ...mainAgentPermissionsState,
         permissions: {
-          policies: [{ tool: "*", permission: "allow" }],
+          policies: subAgentPolicies,
         },
       },
     );
